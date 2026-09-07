@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OAuth callback</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --fg: #14161a;
+    --muted: #5b6472;
+    --card: #ffffff;
+    --border: #d9dee6;
+    --accent: #0b7a4b;
+    --error: #b3261e;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --fg: #e8eaee;
+      --muted: #9aa3b1;
+      --card: #1c1f25;
+      --border: #2e333c;
+      --accent: #4ade9a;
+      --error: #ff8a80;
+    }
+  }
+
+  body {
+    margin: 0;
+    padding: 32px 20px;
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+  }
+
+  p.sub {
+    margin: 0 0 24px;
+    color: var(--muted);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  code {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    word-break: break-all;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+  }
+
+  button {
+    margin-top: 12px;
+    padding: 9px 16px;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .error {
+    color: var(--error);
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>OAuth callback</h1>
+  <p class="sub">Copy the authorization code and paste it into the token exchange script.</p>
+  <div id="out"></div>
+</main>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  const state = params.get("state");
+  const error = params.get("error");
+  const errorDescription = params.get("error_description");
+  const out = document.getElementById("out");
+
+  function card(label, value, isError) {
+    const el = document.createElement("div");
+    el.className = "card";
+    const lab = document.createElement("div");
+    lab.className = "label" + (isError ? " error" : "");
+    lab.textContent = label;
+    const val = document.createElement("code");
+    val.textContent = value;
+    el.append(lab, val);
+    return el;
+  }
+
+  if (error) {
+    out.append(card("Error", error, true));
+    if (errorDescription) {
+      out.append(card("Details", errorDescription, true));
+    }
+  } else if (code) {
+    const el = card("Authorization code", code);
+    const btn = document.createElement("button");
+    btn.textContent = "Copy code";
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = "Copied";
+        btn.disabled = true;
+      } catch (e) {
+        btn.textContent = "Copy failed — select manually";
+      }
+    });
+    el.append(btn);
+    out.append(el);
+    if (state) {
+      out.append(card("State", state));
+    }
+  } else {
+    out.append(card("No code in URL", "Open this page only via the OAuth redirect.", true));
+  }
+</script>
+</body>
+</html>
